@@ -5,13 +5,13 @@ Company:        Zulius
 Author:         Timbo White 
                 (OOP implementation derived from
                 code by Pim van Riezen)
-Version:        0.0.1
+Version:        0.1.0
 Website:        http://www.zulius.com
 Description:    Bash function library for displaying formatted 
                 messages to the console and log files.  
                 The output imitates the display format of 
                 Linux boot messages. 
-Copyright:      2009 Zulius
+Copyright:      2011 Zulius
 License:        GPL v2 (http://www.gnu.org/licenses/gpl-2.0.html)
 
 HEAD
