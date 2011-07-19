@@ -7,7 +7,8 @@ CWD=`dirname $0`
 . "${CWD}/../bashtasklog.sh"
 
 # step 2 - use printTask to display the task message
-printTask "Attempting to touch /foo/bar"
+new bashtasklog logger -l /tmp/baz.log
+logger.printTask "Attempting to touch /foo/bar"
 
 # step 3 - execute the command,
 # redirect command stderr to stdout,
@@ -16,7 +17,7 @@ OUTPUT=$(touch /foo/bar 2>&1)
 
 # step 4 - examine the command's result code
 if [ ! "$?" == 0 ]; then
-  printFail "$OUTPUT"
+  logger.printFail "$OUTPUT"
   exit 1
 fi
-printOk
+logger.printOk

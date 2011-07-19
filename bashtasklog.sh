@@ -16,57 +16,125 @@ License:        GPL v2 (http://www.gnu.org/licenses/gpl-2.0.html)
 
 HEAD
 
-<<PRINTTASK
+# ---------------------------------------------------------------------------
+# OO support functions
+# Kludged by Pim van Riezen <pi@madscience.nl>
+# ---------------------------------------------------------------------------
+DEFCLASS=""
+CLASS=""
+THIS=0
+
+class() {
+  DEFCLASS="$1"
+  eval CLASS_${DEFCLASS}_VARS=""
+  eval CLASS_${DEFCLASS}_FUNCTIONS=""
+}
+
+static() {
+  return 0
+}
+
+func() {
+  local varname="CLASS_${DEFCLASS}_FUNCTIONS"
+  eval "$varname=\"\${$varname}$1 \""
+}
+
+var() {
+  local varname="CLASS_${DEFCLASS}_VARS"
+  eval $varname="\"\${$varname}$1 \""
+}
+
+loadvar() {
+  eval "varlist=\"\$CLASS_${CLASS}_VARS\""
+  for var in $varlist; do
+    eval "$var=\"\$INSTANCE_${THIS}_$var\""
+  done
+}
+
+loadfunc() {
+  eval "funclist=\"\$CLASS_${CLASS}_FUNCTIONS\""
+  for func in $funclist; do
+    eval "${func}() { ${CLASS}::${func} \"\$@\"; return \$?; }"
+  done
+}
+
+savevar() {
+  eval "varlist=\"\$CLASS_${CLASS}_VARS\""
+  for var in $varlist; do
+    eval "INSTANCE_${THIS}_$var=\"\$$var\""
+  done
+}
+
+typeof() {
+  eval echo \$TYPEOF_$1
+}
+
+new() {
+  local class="$1"
+  local cvar="$2"
+  shift
+  shift
+  local id=$(uuidgen | tr A-F a-f | sed -e "s/-//g")
+  eval TYPEOF_${id}=$class
+  eval $cvar=$id
+  local funclist
+  eval "funclist=\"\$CLASS_${class}_FUNCTIONS\""
+  for func in $funclist; do
+    eval "${cvar}.${func}() { local t=\$THIS; THIS=$id; local c=\$CLASS; CLASS=$class; loadvar; loadfunc; ${class}::${func} \"\$@\"; rt=\$?; savevar; CLASS=\$c; THIS=\$t; return $rt; }"
+  done
+  eval "${cvar}.${class} \"\$@\" || true"
+}
+
+# bashtasklog class definition
+class bashtasklog
+  func bashtasklog
+  func print
+  func printTask
+  func printOk
+  func printFail
+  func printWarn
+  func printInfo
+  func setWidth
+  func setQuiet
+  func setTimestamp
+  func setLogfile
+  func printStatus
+  var timestamp
+  var logfile
+  var quiet
+  var width
+
+<<BTL
 NAME
-        printTask - utility function for printing columnar messages to terminal/log file
+        bashtasklog constructor 
 
 SYNOPSIS
-        printTask [OPTION]... MESSAGE
+        new bashtasklog your_instance_var_here [OPTIONS]
 
 OPTIONS:
-        -t      flag to automatically prepend message with 14 digit timestamp
-        -l      specify log file to write to
-        -q      quiet mode. Do not output to stdout, only write to log file if supplied
+        -t      flag to automatically prepend all task messages with 14 a digit timestamp
+        -l      specify a log file to write to
+        -q      quiet mode flag. Do not output to stdout, only write to log file if supplied
         -w      width of padded message column. Defaults to 80 characters.
 
-USAGE:
-        1)  Print message to terminal:
-        
-              printTask "Gittin 'er done"
+EXAMPLE:
+        1)  Instantiate a bashtasklog object that will append a timestamp
+            to each message, have a message column 50 chars in width,
+            and will write to log file /tmp/foo.log: 
 
-            OUTPUT to terminal:
-            
-              Gittin 'er done                                                                 
+            new bashtasklog logger -t -w 50 -l "/tmp/foo.log"
 
-        2)  Print message to terminal and log file with prepended date stamp
-
-              printTask -t -l "/tmp/foobar" "Gittin 'er done"
-
-            OUTPUT to terminal:
-
-              20091113085326  Gittin 'er done                                                  
-
-            OUTPUT to log file:
-              
-              20091113085326  Gittin 'er done
-        
-PRINTTASK
-
-printTask()
-{
-  _TP_THE_DATE=''
-  _TP_LOG_PATH=''
-  _TP_QUIET=''
-  _TP_COLUMN_PAD=80
-
+BTL
+bashtasklog::bashtasklog() {
   # get options
+  OPTARG=""
   OPTIND=1
   while getopts ":tql:w:" OPT; do
     case $OPT in
-      t) _TP_THE_DATE=$(date +"%Y%m%d%H%M%S  ") ;;
-      q) _TP_QUIET=1 ;;
-      l) _TP_LOG_PATH=$OPTARG ;;
-      w) _TP_COLUMN_PAD=$OPTARG ;;
+      t) setTimestamp 1 ;;
+      q) setQuiet 1 ;;
+      l) setLogfile $OPTARG ;;
+      w) setWidth $OPTARG ;;
       :)
     esac
   done
@@ -75,339 +143,203 @@ printTask()
   shift $(($OPTIND - 1))
   OPTIND=1
 
-  _TP_COLUMN_PAD="%-${_TP_COLUMN_PAD}s"
+  # defaults 
+  if [ -z "$width" ]; then setWidth 80; fi
+}
+
+# sets the width of the task column
+bashtasklog::setWidth() { width="%-${1}s"; } 
+
+# sets timestamp flag (1 = on, anything else = off)
+bashtasklog::setTimestamp() {
+  if [ ! -z $1 ] && [ $1 == "1" ]; then
+    timestamp="1";
+  else
+    timestamp="";
+  fi
+}
+
+# sets quiet mode flag (1 = on, anything else = off)
+bashtasklog::setQuiet() { 
+  if [ ! -z $1 ] && [ $1 == "1" ]; then
+    quiet="1";
+  else
+    quiet="";
+  fi
+}
+
+# sets the logfile path
+bashtasklog::setLogfile() { logfile="$1"; }
+
+bashtasklog::printStatus() {
+  local COLOR_RESET="\x1b[39;49;00m"
+  local STATUS=''
+  local COLOR=''
+
+  case $1 in
+      1) STATUS="[  OK  ]"; COLOR="\x1b[33;32m";;
+      2) STATUS="[ FAIL ]"; COLOR="\x1b[31;31m";;
+      3) STATUS="[ WARN ]"; COLOR="\x1b[33;33m";;
+      4) STATUS="[ INFO ]"; COLOR="\x1b[36;01m";;
+      *) STATUS="[ $1 ]"; COLOR="";;
+  esac
 
   # quiet mode, print only to log file
-  if [ ! -z "$_TP_QUIET" ] && [ ! -z "$_TP_LOG_PATH" ]; then
-    printf "$_TP_COLUMN_PAD" "$_TP_THE_DATE${1}" >> "$_TP_LOG_PATH"
+  if [ ! -z "$quiet" ] && [ ! -z "$logfile" ]; then
+    echo -e "$STATUS" >> "$logfile"
+
+    # supplementary message
+    if [ ! -z "$2" ]; then
+      echo -e "\n$2\n" >> "$logfile"
+    fi
     return 0
   fi
 
   # non-quiet mode with log file
-  if [ -z "$_TP_QUIET" ] && [ ! -z "$_TP_LOG_PATH" ]; then 
-    printf "$_TP_COLUMN_PAD" "${_TP_THE_DATE}${1}" | tee -a "$_TP_LOG_PATH"
+  if [ -z "$quiet" ] && [ ! -z "$logfile" ]; then
+    echo -e "${COLOR}${STATUS}${COLOR_RESET}"
+    echo -e "${STATUS}" >> "$logfile"
+
+    # supplementary message
+    if [ ! -z "$2" ]; then
+      echo -e "\n${COLOR}${2}${COLOR_RESET}\n"
+      echo -e "\n$2\n" >> "$logfile"
+    fi
+
+    return 0
+  fi
+
+  # non-quiet mode, no log file
+  echo -e "${COLOR}${STATUS}${COLOR_RESET}"
+
+  # supplementary message
+  if [ ! -z "$2" ]; then
+    echo -e "\n${COLOR}${2}${COLOR_RESET}\n"
+  fi
+  return 0
+
+}
+
+# Echo's plain string to console and/or logfile.
+# No padding or timestamp.
+bashtasklog::print() {
+  # quiet mode, print only to log file
+  if [ ! -z "$quiet" ] && [ ! -z "$logfile" ]; then
+    echo -e "$1" >> "$logfile"
+    return 0
+  fi
+
+  # non-quiet mode with log file
+  if [ -z "$quiet" ] && [ ! -z "$logfile" ]; then
+    echo -e "$1" | tee -a "$logfile"
+    return 0
+  fi
+
+  # no log file
+  echo -e "$1"
+}
+
+<<BTL
+NAME
+        bashtasklog.printTask
+
+SYNOPSIS
+        instance_var.printTask [MESSAGE]
+
+DESCRIPTION
+        Prints a message to the console and/or task log.
+
+EXAMPLE:
+        1)  Print a message:
+
+            logger.printTask "foo bar baz" 
+
+BTL
+bashtasklog::printTask() {
+  local TIMESTAMP=''
+
+  if [ ! -z "$quiet" ]; then
+    TIMESTAMP=$(date +"%Y%m%d%H%M%S  ");
+  fi
+
+  # quiet mode, print only to log file
+  if [ ! -z "$quiet" ] && [ ! -z "$logfile" ]; then
+    printf "$width" "${TIMESTAMP}${1}" >> "$logfile"
+    return 0
+  fi
+
+  # non-quiet mode with log file
+  if [ -z "$quiet" ] && [ ! -z "$logfile" ]; then 
+    printf "$width" "${TIMESTAMP}${1}" | tee -a "$logfile"
     return 0
   fi
   
   # no log file
-  printf "$_TP_COLUMN_PAD" "${_TP_THE_DATE}${1}"
+  printf "$width" "${TIMESTAMP}${1}"
 
   return 0
 }
 
-<<PRINTOK
+<<BTL
 NAME
-        printOk - utility function for printing green [  OK  ] to terminal/log file.
-                  Meant to be used after printTask.
+        bashtasklog.printOk
 
 SYNOPSIS
-        printOk [OPTION]...
+        instance_var.printOk [MESSAGE]
 
-OPTIONS:
-        -l      specify log file to write to
-        -q      quiet mode. Do not output to stdout, only write to log file if supplied
-
-USAGE:
-        1)  Print [  OK  ] to terminal:
-
-              printTask "Gittin 'er done"
-              printOk
-
-            OUTPUT to terminal:
-
-              Gittin 'er done                                                                 [  OK  ]
-
-        2)  Print task message and [  OK  ] to terminal and log file with prepended date stamp
-            with column width of 50:
-
-              printTask -t -w 50 -l "/tmp/foobar" "Gittin 'er done"
-              printOk -l "/tmp/foobar"
-
-            OUTPUT to terminal:
-
-              20091113090646  Gittin 'er done                   [  OK  ]
-
-            OUTPUT to log file:
-
-              20091113090646  Gittin 'er done                   [  OK  ]
-
-PRINTOK
-
-printOk()
-{
-  _TP_COLOR_RESET="\x1b[39;49;00m"
-  _TP_COLOR_GREEN="\x1b[32;01m"
-  _TP_OK="[  OK  ]" 
-
-  _TP_LOG_PATH=''
-  _TP_QUIET=''
-
-  # get options
-  OPTIND=1
-  while getopts ":ql:" OPT; do
-    case $OPT in
-      q) _TP_QUIET=1 ;;
-      l) _TP_LOG_PATH=$OPTARG ;;
-      :)
-    esac
-  done
-  
-  # get remaining arguments
-  shift $(($OPTIND - 1))
-  OPTIND=1
-
-  _tpStatusPrint 1 "" "$_TP_LOG_PATH" "$_TP_QUIET" 
-
+DESCRIPTION
+        Prints a green "OK" in square brackets. If optional MESSAGE is 
+        passed, it is printed on the next line in green text. 
+BTL
+bashtasklog::printOk() {
+  printStatus "1" "$1"
   return 0
 }
 
-<<PRINTFAIL
+<<BTL
 NAME
-        printFail - utility function for printing red [FAILED] to terminal/log file,
-                    with optional failure message. Meant to be used after printTask.
+        bashtasklog.printFail
 
 SYNOPSIS
-        printFail [OPTION]... [MESSAGE]
+        instance_var.printFail [MESSAGE]
 
-OPTIONS:
-        -l      specify log file to write to
-        -q      quiet mode. Do not output to stdout, only write to log file if supplied
-
-USAGE:
-        1)  Print [  FAIL  ] to terminal:
-
-              printTask "Gittin 'er done"
-              printFail
-
-            OUTPUT to terminal:
-
-              Gittin 'er done                                                                 [FAILED]
-
-        2)  Print message, [FAILED], and failure message to terminal and log file with 
-            prepended date stamp and column width of 50:
-
-              printTask -t -w 50 -l "/tmp/foobar" "Gittin 'er done"
-              printFail -l "/tmp/foobar" "Unable to git 'er done, beer consumption overflow error"
-
-            OUTPUT to terminal:
-
-              20091113090646  Gittin 'er done                   [FAILED]
-
-              Unable to git 'er done, beer consumption overflow error
-
-            OUTPUT to log file:
-
-              20091113090646  Gittin 'er done                   [FAILED]
-
-              Unable to git 'er done, beer consumption overflow error
-
-PRINTFAIL
-
-
-printFail()
-{
-  _TP_LOG_PATH=''
-  _TP_QUIET=''
-
-  # get options
-  OPTIND=1
-  while getopts ":ql:" OPT; do
-    case $OPT in
-      q) _TP_QUIET=1 ;;
-      l) _TP_LOG_PATH=$OPTARG ;;
-      :)
-    esac
-  done
-
-  # get remaining arguments
-  shift $(($OPTIND - 1))
-  OPTIND=1
-
-  _tpStatusPrint 2 "$1" "$_TP_LOG_PATH" "$_TP_QUIET"
-
-  return 0
-
+DESCRIPTION
+        Prints a red "FAIL" in square brackets. If optional MESSAGE is
+        passed, it is printed on the next line in red text.
+BTL
+bashtasklog::printFail() {
+  printStatus "2" "$1" 
+  return 0  
 }
 
-<<PRINTWARN
+<<BTL
 NAME
-        printWarn - utility function for printing yellow [ WARN ] to terminal/log file.
-                    Meant to be used after printTask.
+        bashtasklog.printWarn
 
 SYNOPSIS
-        printWarn [OPTION]...
+        instance_var.printWarn [MESSAGE]
 
-OPTIONS:
-        -l      specify log file to write to
-        -q      quiet mode. Do not output to stdout, only write to log file if supplied
-
-USAGE:
-        1)  Print [ WARN ] to terminal:
-
-              printTask "Gittin 'er done"
-              printWarn
-
-            OUTPUT to terminal:
-
-              Gittin 'er done                                                                 [ WARN ]
-
-        2)  Print task message and [ WARN ] to terminal and log file with prepended date stamp
-            with column width of 50:
-
-              printTask -t -w 50 -l "/tmp/foobar" "Gittin 'er done"
-              printWarn -l "/tmp/foobar"
-
-            OUTPUT to terminal:
-
-              20091113090646  Gittin 'er done                   [ WARN ]
-
-            OUTPUT to log file:
-
-              20091113090646  Gittin 'er done                   [ WARN ]
-
-PRINTWARN
-
-printWarn()
-{
-  _TP_LOG_PATH=''
-  _TP_QUIET=''
-
-  # get options
-  OPTIND=1
-  while getopts ":ql:" OPT; do
-    case $OPT in
-      q) _TP_QUIET=1 ;;
-      l) _TP_LOG_PATH=$OPTARG ;;
-      :)
-    esac
-  done
-  
-  # get remaining arguments
-  shift $(($OPTIND - 1))
-  OPTIND=1
-
-  _tpStatusPrint 3 "" "$_TP_LOG_PATH" "$_TP_QUIET" 
-
+DESCRIPTION
+        Prints a orange "WARN" in square brackets. If optional MESSAGE is
+        passed, it is printed on the next line in orange text.
+BTL
+bashtasklog::printWarn() {
+  printStatus "3" "$1"
   return 0
 }
 
-<<PRINTINFO
+<<BTL
 NAME
-        printInfo - utility function for printing blue [ INFO ] to terminal/log file.
-                    Meant to be used after printTask.
+        bashtasklog.printInfo
 
 SYNOPSIS
-        printInfo [OPTION]...
+        instance_var.printInfo [MESSAGE]
 
-OPTIONS:
-        -l      specify log file to write to
-        -q      quiet mode. Do not output to stdout, only write to log file if supplied
-
-USAGE:
-        1)  Print [ INFO ] to terminal:
-
-              printTask "Gittin 'er done"
-              printInfo
-
-            OUTPUT to terminal:
-
-              Gittin 'er done                                                                 [ INFO ]
-
-        2)  Print task message and [ INFO ] to terminal and log file with prepended date stamp
-            with column width of 50:
-
-              printTask -t -w 50 -l "/tmp/foobar" "Gittin 'er done"
-              printInfo -l "/tmp/foobar"
-
-            OUTPUT to terminal:
-
-              20091113090646  Gittin 'er done                   [ INFO ]
-
-            OUTPUT to log file:
-
-              20091113090646  Gittin 'er done                   [ INFO ]
-
-PRINTINFO
-
-printInfo()
-{
-  _TP_LOG_PATH=''
-  _TP_QUIET=''
-
-  # get options
-  OPTIND=1
-  while getopts ":ql:" OPT; do
-    case $OPT in
-      q) _TP_QUIET=1 ;;
-      l) _TP_LOG_PATH=$OPTARG ;;
-      :)
-    esac
-  done
-  
-  # get remaining arguments
-  shift $(($OPTIND - 1))
-  OPTIND=1
-
-  _tpStatusPrint 4 "" "$_TP_LOG_PATH" "$_TP_QUIET" 
-
-  return 0
-}
-
-
-<<_TPSTATUSPRINT
-  Private method, not really meant for usage outside this script.
-
-  $1  integer     status
-  $2  string      message
-  $3  string      log file path
-  $4  integer     quiet mode
-
-_TPSTATUSPRINT
-
-_tpStatusPrint(){
-  _TP_COLOR_RESET="\x1b[39;49;00m"
-
-  _TP_STATUS=''
-  _TP_COLOR=''
-
-  case $1 in
-      1) _TP_STATUS="[  OK  ]"; _TP_COLOR="\x1b[33;32m";;
-      2) _TP_STATUS="[FAILED]"; _TP_COLOR="\x1b[31;31m";;
-      3) _TP_STATUS="[ WARN ]"; _TP_COLOR="\x1b[33;33m";;
-      4) _TP_STATUS="[ INFO ]"; _TP_COLOR="\x1b[36;01m";;
-      *) _TP_STATUS="[ ???? ]"; _TP_COLOR="";;
-  esac
-
-  # quiet mode, print only to log file
-  if [ ! -z "$4" ] && [ ! -z "$3" ]; then
-    echo -e "$_TP_STATUS" >> $3
-
-    # supplementary message
-    if [ ! -z "$2" ]; then
-      echo -e "\n$2\n" >> "$3"
-    fi
-    return 0
-  fi
-
-  # non-quiet mode with log file
-  if [ -z "$4" ] && [ ! -z "$3" ]; then
-    echo -e "${_TP_COLOR}${_TP_STATUS}${_TP_COLOR_RESET}"
-    echo -e "${_TP_STATUS}" >> "$3"
-
-    # supplementary message
-    if [ ! -z "$2" ]; then
-      echo -e "\n${_TP_COLOR}${2}${_TP_COLOR_RESET}\n"
-      echo -e "\n$2\n" >> "$3"
-    fi
-
-    return 0
-  fi
-
-  echo -e "${_TP_COLOR}${_TP_STATUS}${_TP_COLOR_RESET}"
-
-  # supplementary message
-  if [ ! -z "$2" ]; then
-    echo -e "\n${_TP_COLOR}${2}${_TP_COLOR_RESET}\n"
-  fi
+DESCRIPTION
+        Prints a blue "INFO" in square brackets. If optional MESSAGE is
+        passed, it is printed on the next line in blue text.
+BTL
+bashtasklog::printInfo() {
+  printStatus "4" "$1"
   return 0
 }

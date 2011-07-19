@@ -9,18 +9,20 @@ CWD=`dirname $0`
 # set up log file path variable
 LOG_FILE="/tmp/foobar.log"
 
-printTask -t -w 50 -l "$LOG_FILE" "Process running"
+new bashtasklog logger -t -w 50 -l "$LOG_FILE"
+
+logger.printTask "Process running"
 sleep 1s    # your code here
-printOk -l "$LOG_FILE"
+logger.printOk 
 
-printTask -t -w 50 -l "$LOG_FILE" "Implementing and executing"
+logger.printTask "Implementing and executing"
 sleep 1s
-printOk -l "$LOG_FILE"
+logger.printOk
 
-printTask -t -w 50 -l "$LOG_FILE" "Doing stuff"
+logger.printTask "Doing stuff"
 sleep 1s
-printOk -l "$LOG_FILE"
+logger.printOk
 
-printTask -t -w 50 -l "$LOG_FILE" "Gittin 'er done"
+logger.printTask "Gittin 'er done"
 sleep 1s
-printFail -l "$LOG_FILE" "Max hillbilly tolerance level reached"
+logger.printFail "Max hillbilly tolerance level reached" 

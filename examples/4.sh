@@ -6,31 +6,32 @@ CWD=`dirname $0`
 # source the library file
 . "${CWD}/../bashtasklog.sh"
 
-printTask "Attempting to make eye contact with girl across the bar"
+new bashtasklog logger
+
+logger.printTask "Making eye contact with girl across the bar"
 sleep 1s    # simulate command execution
-printOk
+logger.printOk
 
-printTask "Receiving smile from girl"
+logger.printTask "Got smile from girl"
 sleep 1s
-printOk
+logger.printOk
 
-printTask "Faking cell phone call to look important"
+logger.printTask "Faking cell phone call to look important"
 sleep 1s
-printOk
+logger.printOk
 
-printTask "Consuming 6th beer; courage resources allocated"
+logger.printTask "Consuming 6th beer; courage resources allocated"
 sleep 1s
-printInfo
+logger.printInfo
 
-printTask "Consuming 3 whiskey shots; courage buffer overflow"
+logger.printTask "Consuming 3 whiskey shots; courage buffer overflow"
 sleep 1s
-printWarn
+logger.printWarn
 
-printTask "Stumbling over to girl while room is spinning"
+logger.printTask "Stumbling over to girl while room is spinning"
 sleep 1s
-printWarn
+logger.printWarn
 
-printTask "Regurgitating half-digested dinner into girl's lap"
+logger.printTask "Regurgitating half-digested dinner into girl's lap"
 sleep 1s
-printFail "Panic - girl's bodybuilder boyfriend approaching"
-
+logger.printFail "Panic - girl's angry boyfriend approaching"

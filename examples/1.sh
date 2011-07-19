@@ -6,83 +6,82 @@ CWD=`dirname $0`
 # source the library file
 . "${CWD}/../bashtasklog.sh"
 
-printTask -d "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+new bashtasklog logger 
+
+logger.printTask "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+logger.printOk
+
+logger.printTask "Sed sagittis rhoncus nisl, eu commodo risus facilisis sed."
+logger.printOk
+
+logger.printTask "Duis non quam felis, et auctor risus."
+logger.printOk
+
+logger.printTask "Nullam condimentum elit et nulla scelerisque ultrices."
+logger.printOk
+
+logger.printTask "Duis sed orci elit, non tristique nulla."
+logger.printOk
+
+logger.printTask "Cras tempus tellus sed odio dapibus elementum."
+logger.printOk
+
+logger.printTask "Maecenas mattis ullamcorper sem, id tristique est rhoncus at."
+logger.printOk
+
+logger.printTask "Pellentesque sed eros ante, eget vestibulum neque."
+logger.printOk
+
+logger.printTask "Donec sodales ultrices purus, vitae molestie nisl elementum non."
+logger.printOk
+
+logger.printTask "Ut ullamcorper tristique nisi, vitae auctor libero malesuada id."
+logger.printOk
+
+logger.printTask "Sed faucibus massa orci, et vulputate sem."
+logger.printOk
+
+logger.printTask "Fusce luctus felis interdum risus faucibus rutrum."
+logger.printOk
+
+logger.printTask "Integer tempus ante quis orci pharetra lobortis."
+logger.printOk
+
+logger.printTask "Proin tincidunt eleifend magna, ac bibendum ante lacinia commodo."
+logger.printOk
+
+logger.printTask "Sed et quam risus, eget pulvinar nulla."
+logger.printOk
+
+logger.printTask "Suspendisse id metus vitae justo aliquet mattis."
+logger.printOk
+
+logger.printTask "Vivamus ullamcorper nulla a lorem congue interdum."
+logger.printOk
+
+logger.printTask "Donec ac velit ac quam elementum bibendum sit amet vel mi."
+logger.printOk
+
+logger.printTask "Vivamus vulputate ornare ipsum, ac aliquet ligula tristique eget."
+logger.printOk
+
+logger.printTask "Nunc cursus venenatis urna, iaculis congue orci vestibulum vitae."
+logger.printOk
+
+logger.printTask "Cras convallis condimentum est, eu facilisis nisi consectetur quis."
+logger.printOk
+
+logger.printTask "Suspendisse commodo sem vel nisi consequat in suscipit nulla porttitor."
+logger.printOk
+
+logger.printTask "Nullam tincidunt turpis nec est pellentesque pharetra."
+logger.printOk
+
+logger.printTask "Sed feugiat libero sed ante pellentesque ullamcorper."
+logger.printOk
+
+logger.printTask "Duis id massa vel elit tempus fringilla venenatis eu sem."
 printOk
-
-printTask -d "Sed sagittis rhoncus nisl, eu commodo risus facilisis sed."
-printOk
-
-printTask -d "Duis non quam felis, et auctor risus."
-printOk
-
-printTask -d "Nullam condimentum elit et nulla scelerisque ultrices."
-printOk
-
-printTask -d "Duis sed orci elit, non tristique nulla."
-printOk
-
-printTask -d "Cras tempus tellus sed odio dapibus elementum."
-printOk
-
-printTask -d "Maecenas mattis ullamcorper sem, id tristique est rhoncus at."
-printOk
-
-printTask -d "Pellentesque sed eros ante, eget vestibulum neque."
-printOk
-
-printTask -d "Donec sodales ultrices purus, vitae molestie nisl elementum non."
-printOk
-
-printTask -d "Ut ullamcorper tristique nisi, vitae auctor libero malesuada id."
-printOk
-
-printTask -d "Sed faucibus massa orci, et vulputate sem."
-printOk
-
-printTask -d "Fusce luctus felis interdum risus faucibus rutrum."
-printOk
-
-printTask -d "Integer tempus ante quis orci pharetra lobortis."
-printOk
-
-printTask -d "Proin tincidunt eleifend magna, ac bibendum ante lacinia commodo."
-printOk
-
-printTask -d "Sed et quam risus, eget pulvinar nulla."
-printOk
-
-printTask -d "Suspendisse id metus vitae justo aliquet mattis."
-printOk
-
-printTask -d "Vivamus ullamcorper nulla a lorem congue interdum."
-printOk
-
-printTask -d "Donec ac velit ac quam elementum bibendum sit amet vel mi."
-printOk
-
-printTask -d "Vivamus vulputate ornare ipsum, ac aliquet ligula tristique eget."
-printOk
-
-printTask -d "Nunc cursus venenatis urna, iaculis congue orci vestibulum vitae."
-printOk
-
-printTask -d "Cras convallis condimentum est, eu facilisis nisi consectetur quis."
-printOk
-
-printTask -d "Suspendisse commodo sem vel nisi consequat in suscipit nulla porttitor."
-printOk
-
-printTask -d "Nullam tincidunt turpis nec est pellentesque pharetra."
-printOk
-
-printTask -d "Sed feugiat libero sed ante pellentesque ullamcorper."
-printOk
-
-printTask -d "Duis id massa vel elit tempus fringilla venenatis eu sem."
-printOk
-
-
 
 # print a spacer
-echo -e "\n\n"
-
+logger.print "\n\n"
