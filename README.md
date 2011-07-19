@@ -140,7 +140,7 @@ Want to add something sweet? Here's what to do:
 Author
 ======
 
-Timbo White of Zulius[Zulius](http://www.zulius.com).
+Timbo White of [Zulius](http://www.zulius.com).
 
 Follow on the twittinator: [_zulius_](http://twitter.com/_zulius_) 
 
