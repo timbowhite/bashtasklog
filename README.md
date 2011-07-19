@@ -12,8 +12,6 @@ Screenshots
 
 ![ss2](http://www.zulius.com/img/blog/bash-beauty/bash-beauty-ss2.jpg)
 
-![ss3](http://www.zulius.com/img/blog/bash-beauty/bash-beauty-ss3.jpg)
-
 
 Usage
 =====
@@ -32,7 +30,7 @@ Usage
             -w      width of padded message column. Defaults to 80 characters.
 
     EXAMPLE:
-            1)  Instantiate a bashtasklog object that will append a timestamp
+            1)  Instantiate a bashtasklog object that will prepend a timestamp
                 to each message, have a message column 50 chars in width,
                 and will write to log file /tmp/foo.log:
 
@@ -122,6 +120,9 @@ Example
     logger.printTask "Gittin 'er done"
     sleep 1s
     logger.printFail "Max hillbilly tolerance level reached"
+
+## output ##
+![ss3](http://www.zulius.com/img/blog/bash-beauty/bash-beauty-ss3.jpg)
 
 
 
