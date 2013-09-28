@@ -258,7 +258,7 @@ BTL
 bashtasklog::printTask() {
   local TIMESTAMP=''
 
-  if [ ! -z "$quiet" ]; then
+  if [ ! -z "$timestamp" ]; then
     TIMESTAMP=$(date +"%Y%m%d%H%M%S  ");
   fi
 
